@@ -54,8 +54,15 @@ class PerceptronClassifier:
         for iteration in range(self.max_iterations):
             print("Starting iteration ", iteration, "...")
             for i in range(len(trainingData)):
-                "*** YOUR CODE HERE ***"
-                util.raiseNotDefined()
+                datum = trainingData[i]
+                correct_label = trainingLabels[i]
+                scores = util.Counter()
+                for l in self.legalLabels:
+                    scores[l] = self.weights[l] * datum
+                predicted = scores.argMax()
+                if predicted != correct_label:
+                    self.weights[correct_label] += datum
+                    self.weights[predicted] -= datum
 
     def classify(self, data ):
         """
