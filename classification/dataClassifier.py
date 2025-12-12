@@ -75,7 +75,6 @@ def enhancedFeatureExtractorDigit(datum):
     # Two features:
     # First feature counts if more pixels in top half than bottom half
     # Second feature counts if more pixels in left half than right half
-    # Also counting connected components
     ##
     """
     features =  basicFeatureExtractorDigit(datum)
@@ -120,26 +119,6 @@ def enhancedFeatureExtractorDigit(datum):
     features["leftHeavy"] = 1 if leftCount > rightCount + 10 else 0
     features["rightHeavy"] = 1 if rightCount > leftCount + 10 else 0
 
-
-    # connected components
-
-    visited = set()
-    components = 0
-
-    for x in range(DIGIT_DATUM_WIDTH):
-        for y in range(DIGIT_DATUM_HEIGHT):
-            if datum.getPixel(x, y) > 0 and (x, y) not in visited:
-                stack = [(x, y)]
-                while stack:
-                    cx, cy = stack.pop()
-                    if (cx, cy) not in visited and datum.getPixel(cx, cy) > 0:
-                        visited.add((cx, cy))
-                        for nx, ny in [(cx-1, cy), (cx+1, cy), (cx, cy-1), (cx, cy+1)]:
-                            if 0 <= nx < DIGIT_DATUM_WIDTH and 0 <= ny < DIGIT_DATUM_HEIGHT:
-                                stack.append((nx, ny))
-                components += 1
-
-    features["connectedComponents"] = 1 if components >= 2 else 0
 
     return features
 
