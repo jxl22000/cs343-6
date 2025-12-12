@@ -72,13 +72,51 @@ def enhancedFeatureExtractorDigit(datum):
     for this datum (datum is of type samples.Datum).
 
     ## DESCRIBE YOUR ENHANCED FEATURES HERE...
-
+    # Two features:
+    # First feature counts if more pixels in top half than bottom half
+    # Second feature counts if more pixels in left half than right half
     ##
     """
     features =  basicFeatureExtractorDigit(datum)
 
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+
+
+    # Two features:
+
+    # First feature counts if more pixels in top half than bottom half
+
+    midY = DIGIT_DATUM_HEIGHT // 2
+
+    topCount = 0
+    bottomCount = 0
+    for x in range(DIGIT_DATUM_WIDTH):
+        for y in range(DIGIT_DATUM_HEIGHT):
+            if datum.getPixel(x, y) > 0:
+                if y < midY:
+                    topCount += 1
+                else:
+                    bottomCount += 1
+
+    features["topHeavy"] = 1 if topCount > bottomCount else 0
+
+    # Second feature counts if more pixels in left half than right half
+
+    midX = DIGIT_DATUM_WIDTH // 2
+
+    leftCount = 0
+    rightCount = 0
+    for x in range(DIGIT_DATUM_WIDTH):
+        for y in range(DIGIT_DATUM_HEIGHT):
+            if datum.getPixel(x, y) > 0:
+                if x < midX:
+                    leftCount += 1
+                else:
+                    rightCount += 1
+
+    features["leftHeavy"] = 1 if leftCount > rightCount else 0
+
+    # util.raiseNotDefined()
 
     return features
 
