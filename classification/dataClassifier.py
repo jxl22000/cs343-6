@@ -100,7 +100,8 @@ def enhancedFeatureExtractorDigit(datum):
                 else:
                     bottomCount += 1
 
-    features["topHeavy"] = 1 if topCount > bottomCount else 0
+    features["topHeavy"] = 1 if topCount > bottomCount + 10 else 0
+    features["bottomHeavy"] = 1 if bottomCount > topCount + 10 else 0
 
     # Second feature counts if more pixels in left half than right half
 
@@ -116,7 +117,9 @@ def enhancedFeatureExtractorDigit(datum):
                 else:
                     rightCount += 1
 
-    features["leftHeavy"] = 1 if leftCount > rightCount else 0
+    features["leftHeavy"] = 1 if leftCount > rightCount + 10 else 0
+    features["rightHeavy"] = 1 if rightCount > leftCount + 10 else 0
+
 
     # connected components
 
@@ -136,7 +139,7 @@ def enhancedFeatureExtractorDigit(datum):
                                 stack.append((nx, ny))
                 components += 1
 
-    features["connectedComponents"] = 1 if components >= 1 else 0
+    features["connectedComponents"] = 1 if components >= 2 else 0
 
     return features
 
