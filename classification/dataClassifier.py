@@ -164,7 +164,31 @@ def enhancedPacmanFeatures(state, action):
     """
     features = util.Counter()
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+
+    # lets try to implement distance to nearest ghost and distance to nearest food features
+
+    # distance to nearest food
+
+    foodList = state.getFood().asList()
+    successor = state.generateSuccessor(0, action)
+    pacmanPos = successor.getPacmanPosition()
+    if foodList:
+        minDistance = min([util.manhattanDistance(pacmanPos, food) for food in foodList])
+        features["closestFood"] = minDistance
+    else:
+        features["closestFood"] = 0
+
+
+    # distance to nearest ghost
+
+    ghostList = successor.getGhostPositions()
+    if ghostList:
+        minDistance = min([util.manhattanDistance(pacmanPos, ghost) for ghost in ghostList])
+        features["closestGhost"] = minDistance
+    else:
+        features["closestGhost"] = 0
+
+    # util.raiseNotDefined()
     return features
 
 

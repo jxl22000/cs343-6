@@ -64,7 +64,7 @@ class PerceptronClassifier:
                 predicted = scores.argMax()
                 if predicted != correct_label:
                     self.weights[correct_label] += datum
-                    self.weights[predicted] -= datum
+                    self.weights[predicted] -= datum    
 
     def classify(self, data ):
         """
