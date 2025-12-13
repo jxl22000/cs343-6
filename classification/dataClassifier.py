@@ -174,7 +174,7 @@ def enhancedPacmanFeatures(state, action):
     pacmanPos = successor.getPacmanPosition()
     if foodList:
         minDistance = min([util.manhattanDistance(pacmanPos, food) for food in foodList])
-        features["closestFood"] = minDistance
+        features["closestFood"] = minDistance / 50
     else:
         features["closestFood"] = 0
 
@@ -184,9 +184,33 @@ def enhancedPacmanFeatures(state, action):
     ghostList = successor.getGhostPositions()
     if ghostList:
         minDistance = min([util.manhattanDistance(pacmanPos, ghost) for ghost in ghostList])
-        features["closestGhost"] = minDistance
+        features["closestGhost"] = minDistance / 50
+        features["danger"] = 1 / (minDistance + 1)
     else:
+        features["danger"] = 0
         features["closestGhost"] = 0
+
+    # add feature if ghost is scared and how muhc longer scared for
+
+    for i in range(1, state.getNumAgents()):
+        ghostState = state.getGhostState( i )
+        features["ghostTimer"] = 1 if ghostState.scaredTimer > 0 else 0
+        if ghostState.scaredTimer > 0: features["danger"] = 0 
+        # features["ghostTimer"] = ghostState.scaredTimer
+
+    # add distance to nearest capsule
+    
+    capsuleList = state.getCapsules()
+    if capsuleList:
+        minDistance = min([util.manhattanDistance(pacmanPos, cap) for cap in capsuleList])
+        features["capsuleDist"] = minDistance / 100
+    else:
+        features["capsuleDist"] = 0
+
+    # did we eat food? 
+
+    x, y = pacmanPos
+    features["eatFood"] = state.hasFood(x, y)
 
     # util.raiseNotDefined()
     return features

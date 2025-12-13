@@ -51,11 +51,11 @@ class PerceptronClassifierPacman(PerceptronClassifier):
             for i in range(len(trainingData)):
                 "*** YOUR CODE HERE ***"
                 datum = trainingData[i]
-                print(datum)
+                # print(datum)
                 features = datum[0]
                 actions = datum[1]
                 correct_label = trainingLabels[i]
-                print(correct_label)
+                # print(correct_label)
                 scores = util.Counter()
 
                 # for l in self.legalLabels:
