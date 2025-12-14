@@ -72,57 +72,125 @@ def enhancedFeatureExtractorDigit(datum):
     for this datum (datum is of type samples.Datum).
 
     ## DESCRIBE YOUR ENHANCED FEATURES HERE...
-    # Two features:
-    # First feature counts if more pixels in top half than bottom half
-    # Second feature counts if more pixels in left half than right half
+    1) Which quadrant has the most ink
+    2) Transition counts on middle column/row (stroke complexity)
+    3) Counting number of holes (enclosed filled regions)
+    4) Vertical and horizontal stroke (5 filled pixels in a row) detection
+    5) Check for a curve at the bottom
     ##
     """
     features =  basicFeatureExtractorDigit(datum)
 
-    "*** YOUR CODE HERE ***"
-
-
-    # Two features:
-
-    # First feature counts if more pixels in top half than bottom half
-
-
-    midY = DIGIT_DATUM_HEIGHT // 2
-
-    topCount = 0
-    bottomCount = 0
+    # Convert datum to a 2D grid of 0/1 for convenience
+    grid = [[0 for _ in range(DIGIT_DATUM_HEIGHT)] for _ in range(DIGIT_DATUM_WIDTH)]
+    total_filled = 0
     for x in range(DIGIT_DATUM_WIDTH):
         for y in range(DIGIT_DATUM_HEIGHT):
             if datum.getPixel(x, y) > 0:
-                if y < midY:
-                    topCount += 1
-                else:
-                    bottomCount += 1
+                v = 1
+            else:
+                v = 0
+            grid[x][y] = v
+            total_filled += v
 
-    features["topHeavy"] = 1 if topCount > bottomCount + 10 else 0
-    features["bottomHeavy"] = 1 if bottomCount > topCount + 10 else 0
-
-    # Second feature counts if more pixels in left half than right half
-
-    midX = DIGIT_DATUM_WIDTH // 2
-
-    leftCount = 0
-    rightCount = 0
+    # 1
+    q_sum = [0,0,0,0]
     for x in range(DIGIT_DATUM_WIDTH):
         for y in range(DIGIT_DATUM_HEIGHT):
-            if datum.getPixel(x, y) > 0:
-                if x < midX:
-                    leftCount += 1
-                else:
-                    rightCount += 1
+            qx = 0 if x < DIGIT_DATUM_WIDTH / 2 else 1
+            qy = 0 if y < DIGIT_DATUM_HEIGHT / 2 else 1
+            index = qx + 2 * qy
+            q_sum[index] += grid[x][y]
+    max_q = q_sum.index(max(q_sum))
+    features['quadrant_tl'] = 1 if max_q == 0 else 0
+    features['quadrant_tr'] = 1 if max_q == 1 else 0
+    features['quadrant_bl'] = 1 if max_q == 2 else 0
+    features['quadrant_br'] = 1 if max_q == 3 else 0
 
-    features["leftHeavy"] = 1 if leftCount > rightCount + 10 else 0
-    features["rightHeavy"] = 1 if rightCount > leftCount + 10 else 0
+    # 2
+    middle_x = DIGIT_DATUM_WIDTH // 2
+    middle_y = DIGIT_DATUM_HEIGHT // 2
+    col_trans = 0
+    for y in range(1,DIGIT_DATUM_HEIGHT):
+        if grid[middle_x][y] != grid[middle_x][y - 1]:
+            col_trans += 1
+    row_trans = 0
+    for x in range(1,DIGIT_DATUM_WIDTH):
+        if grid[x][middle_y] != grid[x - 1][middle_y]:
+            row_trans += 1
+    features['col_trans_many'] = 1 if col_trans >= 4 else 0
+    features['col_trans_few'] = 1 if col_trans < 4 else 0
+    features['row_trans_many'] = 1 if row_trans >= 4 else 0
+    features['row_trans_few'] = 1 if row_trans < 4 else 0
+    
+    # 3
+    visited = set()
+    border_pixels = set()
+    for x in range(DIGIT_DATUM_WIDTH):
+        if grid[x][0] == 0:
+            border_pixels.add((x, 0))
+        if grid[x][DIGIT_DATUM_HEIGHT - 1] == 0:
+            border_pixels.add((x, DIGIT_DATUM_HEIGHT - 1))
+    for y in range(DIGIT_DATUM_HEIGHT):
+        if grid[0][y] == 0:
+            border_pixels.add((0, y))
+        if grid[DIGIT_DATUM_WIDTH - 1][y] == 0:
+            border_pixels.add((DIGIT_DATUM_WIDTH - 1, y))
+    for x, y in border_pixels:
+        if (x, y) not in visited:
+            visited = flood_fill(x, y, visited, grid)
+    holes = 0
+    for x in range(DIGIT_DATUM_WIDTH):
+        for y in range(DIGIT_DATUM_HEIGHT):
+            if grid[x][y] == 0 and (x, y) not in visited:
+                holes += 1
+                visited = flood_fill(x, y, visited, grid)
+    features['holes_0'] = 1 if holes == 0 else 0
+    features['holes_1'] = 1 if holes == 1 else 0
+    features['holes_2'] = 1 if holes == 2 else 0
+    features['holes_many'] = 1 if holes > 2 else 0
+    
+    # 4
+    vertical_strokes = 0
+    horizontal_strokes = 0
+    for x in range(DIGIT_DATUM_WIDTH):
+        for y in range(DIGIT_DATUM_HEIGHT - 4):
+            if (grid[x][y] > 0 and grid[x][y + 1] > 0 and grid[x][y + 2] > 0 and 
+                grid[x][y + 3] > 0 and grid[x][y + 4] > 0):
+                vertical_strokes += 1
+                break
+    for y in range(DIGIT_DATUM_HEIGHT):
+        for x in range(DIGIT_DATUM_WIDTH - 4):
+            if (grid[x][y] > 0 and grid[x + 1][y] > 0 and grid[x + 2][y] > 0 and 
+                grid[x + 3][y] > 0 and grid[x + 4][y] > 0):
+                horizontal_strokes += 1
+                break
+    features['vertical_strokes_0'] = 1 if vertical_strokes == 0 else 0
+    features['vertical_strokes_1'] = 1 if vertical_strokes == 1 else 0
+    features['vertical_strokes_2'] = 1 if vertical_strokes == 2 else 0
+    features['vertical_strokes_many'] = 1 if vertical_strokes > 2 else 0
+    features['horizontal_strokes_0'] = 1 if horizontal_strokes == 0 else 0
+    features['horizontal_strokes_1'] = 1 if horizontal_strokes == 1 else 0
+    features['horizontal_strokes_2'] = 1 if horizontal_strokes == 2 else 0
+    features['horizontal_strokes_many'] = 1 if horizontal_strokes > 2 else 0
 
-
+    # 5
+    bottom_rows = [sum(grid[x][DIGIT_DATUM_HEIGHT - 3:]) for x in range(DIGIT_DATUM_WIDTH)]
+    left = sum(bottom_rows[:DIGIT_DATUM_WIDTH // 3])
+    middle = sum(bottom_rows[(DIGIT_DATUM_WIDTH // 3):(2 * DIGIT_DATUM_WIDTH // 3)])
+    right = sum(bottom_rows[2 * DIGIT_DATUM_WIDTH // 3:])
+    features['has_bottom_curve'] = 1 if middle > max(left, right) else 0
     return features
 
-
+def flood_fill(x, y, visited, grid):
+        """Flood fill algorithm to find connected components"""
+        if (x < 0 or x >= DIGIT_DATUM_WIDTH or y < 0 or y >= DIGIT_DATUM_HEIGHT or 
+            grid[x][y] != 0 or (x, y) in visited):
+            return visited
+        visited.add((x, y))
+        for dx, dy in [(-1,0), (1,0), (0,-1), (0,1)]:
+            flood_fill(x+dx, y+dy, visited, grid)
+        return visited
 
 def basicFeatureExtractorPacman(state):
     """
